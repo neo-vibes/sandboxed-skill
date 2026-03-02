@@ -10,6 +10,51 @@ Use this skill when:
 - Need production-like isolation (systemd-nspawn containers)
 - Multi-day unattended operations
 
+## Quick Start (Workspace-as-Code)
+
+Projects define their sandbox needs in `.sandboxed/`:
+
+```
+project/
+├── .sandboxed/
+│   ├── workspace.json    # Config (committed)
+│   ├── .env              # Secrets (gitignored)
+│   └── .env.example      # Template (committed)
+└── ...
+```
+
+### workspace.json
+
+```json
+{
+  "extends": "ubuntu",
+  "repo": {
+    "url": "github.com/org/repo",
+    "branch": "main"
+  },
+  "secrets": ["GITHUB_TOKEN", "ANTHROPIC_API_KEY"],
+  "init_commands": ["npm install"]
+}
+```
+
+### .sandboxed/.env
+
+```bash
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxx
+SANDBOXED_PASSWORD=your-dashboard-password
+```
+
+### Setup & Run
+
+```bash
+# Setup workspace from project config
+./setup-project.sh /path/to/project
+
+# Run a mission
+./run-mission.sh "Implement feature X" claudecode $WORKSPACE_ID
+```
+
 ## Setup
 
 **VPS:** `142.132.205.30`
@@ -220,18 +265,38 @@ curl -X POST "$SANDBOXED_API_URL/api/control/missions/$MISSION_ID/automations" \
 
 ## Helper Scripts
 
+All scripts are in `~/.openclaw/skills/sandboxed-sh/`
+
+### Setup workspace from project config
+
+```bash
+# Reads .sandboxed/workspace.json and .sandboxed/.env
+# Creates container workspace, clones repo, runs init commands
+./setup-project.sh /path/to/project [workspace_name]
+```
+
 ### Create and run a mission
 
 ```bash
-# Source: ~/.openclaw/skills/sandboxed-sh/run-mission.sh
 ./run-mission.sh "Build feature X" "claudecode" "workspace-uuid"
 ```
 
 ### Poll until complete
 
 ```bash
-# Source: ~/.openclaw/skills/sandboxed-sh/poll-mission.sh
 ./poll-mission.sh $MISSION_ID
+```
+
+### Get mission output
+
+```bash
+./get-output.sh $MISSION_ID
+```
+
+### List workspaces
+
+```bash
+./list-workspaces.sh
 ```
 
 ## Error Handling
